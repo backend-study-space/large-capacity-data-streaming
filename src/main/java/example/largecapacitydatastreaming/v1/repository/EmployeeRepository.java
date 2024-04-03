@@ -10,7 +10,6 @@ import javax.sql.DataSource;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @Repository
 public class EmployeeRepository {
@@ -21,20 +20,20 @@ public class EmployeeRepository {
         this.dataSource = dataSource;
     }
 
-    public <T> Pair<Integer, List<T>> findAll(String sql, RowMapper<T> rowMapper) {
-        Integer rowNum = 0;
-        Connection connection = DataSourceUtils.getConnection(dataSource);
+    public <T> List<T> findAll(String sql, RowMapper<T> rowMapper) {
+        int rowNum = 0;
 
-        try (ResultSet rs = connection.prepareStatement(sql).executeQuery(sql)) {
+        try (Connection connection = DataSourceUtils.getConnection(dataSource);
+             PreparedStatement pStmt = connection.prepareStatement(sql);
+             ResultSet rs = pStmt.executeQuery()
+        ) {
             List<T> tList = new ArrayList<>();
 
             while (rs.next()) {
-                T t = rowMapper.mapRow(rs, rowNum++);
-
-                tList.add(t);
+                tList.add(rowMapper.mapRow(rs, rowNum++));
             }
 
-            return Pair.of(rowNum, tList);
+            return tList;
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
