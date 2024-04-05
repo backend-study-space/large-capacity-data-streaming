@@ -9,19 +9,20 @@ import org.springframework.boot.test.context.SpringBootTest;
 import java.util.List;
 
 @SpringBootTest
-class EmployeeServiceTest {
+class EmployeeServiceV1Test {
 
     @Autowired
-    private EmployeeService employeeService;
+    private EmployeeServiceV1 employeeServiceV1;
 
     @Test
     void selectAllTest() {
-        String SQL = "SELECT * FROM employee";
-
-        List<Employee> allEmployees = employeeService.findAllEmployees(SQL);
-
-        System.out.println(allEmployees.size());
+        List<Employee> allEmployees = employeeServiceV1.findAllEmployees();
 
         Assertions.assertThat(allEmployees.size()).isGreaterThan(0);
+    }
+
+    @Test
+    void fileWriteTest() {
+        employeeServiceV1.writeFile("test.csv");
     }
 }
