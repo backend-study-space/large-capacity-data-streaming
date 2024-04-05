@@ -16,9 +16,11 @@ class EmployeeServiceTest {
 
     @Test
     void selectAllTest() {
-        String SQL = "SELECT * FROM EMPLOYEE";
+        String SQL = "SELECT * FROM employee";
 
         List<Employee> allEmployees = employeeService.findAllEmployees(SQL);
+
+        System.out.println(allEmployees.size());
 
         Assertions.assertThat(allEmployees.size()).isGreaterThan(0);
     }

@@ -16,6 +16,13 @@ public class EmployeeService {
     }
 
     public List<Employee> findAllEmployees(String sql) {
-        return employeeRepository.findAll(sql, (rs, rowNum) -> new Employee(rs.getString("name")));
+        return employeeRepository.findAll(sql, (rs, rowNum) -> new Employee(
+                rs.getString("first_name"),
+                rs.getString("last_name"),
+                rs.getString("email"),
+                rs.getString("department"),
+                rs.getDouble("salary"),
+                rs.getDate("hire_date")
+        ));
     }
 }
