@@ -2,12 +2,14 @@ package example.largecapacitydatastreaming.v1.service;
 
 import example.largecapacitydatastreaming.Employee;
 import example.largecapacitydatastreaming.support.FileWriteService;
+import example.largecapacitydatastreaming.support.aop.pointcut.TimeTracer;
 import example.largecapacitydatastreaming.v1.repository.EmployeeRepositoryV1;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
+@TimeTracer
 public class EmployeeServiceV1 {
 
     private final EmployeeRepositoryV1 employeeRepositoryV1;

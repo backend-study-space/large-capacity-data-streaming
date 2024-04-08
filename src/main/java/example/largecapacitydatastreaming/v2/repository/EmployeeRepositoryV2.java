@@ -1,5 +1,6 @@
 package example.largecapacitydatastreaming.v2.repository;
 
+import example.largecapacitydatastreaming.support.aop.pointcut.TimeTracer;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.stereotype.Repository;
@@ -13,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Repository
+@TimeTracer
 public class EmployeeRepositoryV2 {
 
     private final DataSource dataSource;
