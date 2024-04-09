@@ -1,9 +1,10 @@
 package example.largecapacitydatastreaming.support.aop;
 
-import java.util.UUID;
+import java.util.*;
 
 public class LogId {
     private final String id;
+    private final Map<String, Long> timeMap = new HashMap<>();
     private int level;
 
     public LogId() {
@@ -27,5 +28,17 @@ public class LogId {
 
     public int getLevel() {
         return level;
+    }
+
+    public Map<String, Long> getTimeMap() {
+        return timeMap;
+    }
+
+    public void addSpendTimes(String message, Long time) {
+        timeMap.put(message, time);
+    }
+
+    public void updateSpendTimes(String message, Long time) {
+        timeMap.put(message, time - timeMap.get(message));
     }
 }

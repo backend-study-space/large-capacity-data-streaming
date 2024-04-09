@@ -1,5 +1,6 @@
 package example.largecapacitydatastreaming.support;
 
+import example.largecapacitydatastreaming.support.aop.pointcut.TimeTracer;
 import org.springframework.stereotype.Component;
 
 import java.io.FileWriter;
@@ -8,6 +9,7 @@ import java.lang.reflect.Field;
 import java.util.List;
 
 @Component
+@TimeTracer
 public class FileWriteService<T> {
 
     public void writeHeader(Class<T> type, String filePath) {
@@ -23,6 +25,14 @@ public class FileWriteService<T> {
             for (T t : data) {
                 createBody(t, type, writer);
             }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void writeBody(Class<T> type, T data, String filePath) {
+        try (FileWriter writer = new FileWriter(filePath, true)) {
+            createBody(data, type, writer);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

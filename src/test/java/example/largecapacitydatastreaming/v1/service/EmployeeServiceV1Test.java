@@ -1,6 +1,6 @@
 package example.largecapacitydatastreaming.v1.service;
 
-import example.largecapacitydatastreaming.Employee;
+import example.largecapacitydatastreaming.EmployeeDto;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +16,7 @@ class EmployeeServiceV1Test {
 
     @Test
     void selectAllTest() {
-        List<Employee> allEmployees = employeeServiceV1.findAllEmployees();
+        List<EmployeeDto> allEmployees = employeeServiceV1.findAllEmployees();
 
         Assertions.assertThat(allEmployees.size()).isGreaterThan(0);
     }

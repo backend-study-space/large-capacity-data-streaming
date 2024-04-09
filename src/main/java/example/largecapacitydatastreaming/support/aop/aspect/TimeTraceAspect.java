@@ -31,7 +31,7 @@ public class TimeTraceAspect {
 
             Object proceed = joinPoint.proceed();
 
-            timeTrace.end(status);
+            timeTrace.end(joinPoint.getSignature().toShortString(), status);
 
             return proceed;
         } catch (Throwable e) {

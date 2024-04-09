@@ -1,11 +1,13 @@
 package example.largecapacitydatastreaming.v2.service;
 
 import example.largecapacitydatastreaming.Employee;
+import example.largecapacitydatastreaming.EmployeeDto;
 import example.largecapacitydatastreaming.support.FileWriteService;
 import example.largecapacitydatastreaming.support.aop.pointcut.TimeTracer;
 import example.largecapacitydatastreaming.v2.repository.EmployeeRepositoryV2;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -14,15 +16,15 @@ public class EmployeeServiceV2 {
 
     private final EmployeeRepositoryV2 employeeRepositoryV2;
 
-    private final FileWriteService<Employee> fileWriteService;
+    private final FileWriteService<EmployeeDto> fileWriteService;
 
-    public EmployeeServiceV2(EmployeeRepositoryV2 employeeRepositoryV2, FileWriteService<Employee> fileWriteService) {
+    public EmployeeServiceV2(EmployeeRepositoryV2 employeeRepositoryV2, FileWriteService<EmployeeDto> fileWriteService) {
         this.employeeRepositoryV2 = employeeRepositoryV2;
         this.fileWriteService = fileWriteService;
     }
 
     public void findAllEmployees(String filePath) {
-        fileWriteService.writeHeader(Employee.class, filePath);
+        fileWriteService.writeHeader(EmployeeDto.class, filePath);
 
         int pageSize = 10000;
         int totalRecords = 1_000_000;
@@ -39,7 +41,14 @@ public class EmployeeServiceV2 {
                     rs.getDate("hire_date")
             ), start, end);
 
-            fileWriteService.writeBody(Employee.class, employees, filePath);
+            List<EmployeeDto> employeesDto = new ArrayList<>();
+
+            for (Employee employee : employees) {
+                employeesDto.add(EmployeeDto.create(employee));
+            }
+
+
+            fileWriteService.writeBody(EmployeeDto.class, employeesDto, filePath);
         }
     }
 }

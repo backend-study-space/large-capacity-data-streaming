@@ -1,5 +1,6 @@
 package example.largecapacitydatastreaming.v2.repository;
 
+import example.largecapacitydatastreaming.Employee;
 import example.largecapacitydatastreaming.support.aop.pointcut.TimeTracer;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.datasource.DataSourceUtils;
