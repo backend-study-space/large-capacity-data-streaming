@@ -1,11 +1,13 @@
 package example.largecapacitydatastreaming.v3.service;
 
-import example.largecapacitydatastreaming.Employee;
 import example.largecapacitydatastreaming.EmployeeDto;
 import example.largecapacitydatastreaming.support.FileWriteService;
 import example.largecapacitydatastreaming.support.aop.pointcut.TimeTracer;
 import example.largecapacitydatastreaming.v3.repository.EmployeeRepositoryV3;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @TimeTracer
@@ -23,14 +25,28 @@ public class EmployeeServiceV3 {
     public void findAllEmployees(String filePath) {
         fileWriteService.writeHeader(EmployeeDto.class, filePath);
 
-        employeeRepositoryV3.resultSetStream((rs, rowNum) -> new Employee(
-                        rs.getString("first_name"),
-                        rs.getString("last_name"),
-                        rs.getString("email"),
-                        rs.getString("department"),
-                        rs.getDouble("salary"),
-                        rs.getDate("hire_date")))
-                .map(EmployeeDto::create)
-                .forEach(employeeDto -> fileWriteService.writeBody(EmployeeDto.class, employeeDto, filePath));
+//        employeeRepositoryV3.resultSetStream((rs, rowNum) -> new Employee(
+//                        rs.getString("first_name"),
+//                        rs.getString("last_name"),
+//                        rs.getString("email"),
+//                        rs.getString("department"),
+//                        rs.getDouble("salary"),
+//                        rs.getDate("hire_date")))
+//                .map(EmployeeDto::create)
+//                .forEach(employeeDto -> fileWriteService.writeBody(EmployeeDto.class, employeeDto, filePath));
+
+        List<EmployeeDto> list = new ArrayList<>();
+
+        List<EmployeeDto> lists = employeeRepositoryV3.resultSetStream(100000, (rs, rowNum) -> new EmployeeDto(
+                rs.getString("last_name"),
+                rs.getString("email"),
+                rs.getString("department"),
+                rs.getDouble("salary"),
+                rs.getDate("hire_date")
+        ), consumer -> {
+            fileWriteService.writeBody(EmployeeDto.class, consumer, filePath);
+            System.out.println("100,000건 입력 완료");
+            list.clear();
+        }).peek(list::add).toList();
     }
 }
