@@ -3,6 +3,7 @@ package example.largecapacitydatastreaming.v3.repository;
 import example.largecapacitydatastreaming.support.aop.pointcut.TimeTracer;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.jdbc.support.JdbcUtils;
 import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
@@ -28,7 +29,11 @@ public class EmployeeRepositoryV3 {
     public <T> Stream<T> resultSetStream(RowMapper<T> rowMapper) {
         String sql = "SELECT * FROM employee";
 
-        return CustomSpliterator.queryForStream(dataSource, sql, rowMapper);
+        try {
+            return CustomSpliterator.queryForStream(dataSource, sql, rowMapper);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static class CustomSpliterator<T> implements Spliterator<T> {
@@ -43,15 +48,16 @@ public class EmployeeRepositoryV3 {
             this.rowMapper = rowMapper;
         }
 
-        public static <T> Stream<T> queryForStream(DataSource dataSource, String sql, RowMapper<T> rowMapper) {
-            try (Connection connection = DataSourceUtils.getConnection(dataSource);
-                 Statement stmt = connection.createStatement();
-                 ResultSet rs = stmt.executeQuery(sql);
-            ) {
-                return StreamSupport.stream(new CustomSpliterator<>(rs, rowMapper), false);
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
+        public static <T> Stream<T> queryForStream(DataSource dataSource, String sql, RowMapper<T> rowMapper) throws SQLException {
+            Connection connection = DataSourceUtils.getConnection(dataSource);
+            Statement stmt = connection.createStatement();
+            ResultSet rs = stmt.executeQuery(sql);
+
+            return StreamSupport.stream(new CustomSpliterator<>(rs, rowMapper), false).onClose(() -> {
+                JdbcUtils.closeResultSet(rs);
+                JdbcUtils.closeStatement(stmt);
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            });
         }
 
         @Override

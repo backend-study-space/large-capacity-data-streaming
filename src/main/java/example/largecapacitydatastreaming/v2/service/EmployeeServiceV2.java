@@ -47,7 +47,6 @@ public class EmployeeServiceV2 {
                 employeesDto.add(EmployeeDto.create(employee));
             }
 
-
             fileWriteService.writeBody(EmployeeDto.class, employeesDto, filePath);
         }
     }

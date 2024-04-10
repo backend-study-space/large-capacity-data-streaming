@@ -27,11 +27,11 @@ public class TimeTraceAspect {
         TraceStatus status;
 
         try {
-            status = timeTrace.start(joinPoint.getSignature().toShortString());
+            status = timeTrace.start(joinPoint.getSignature().toShortString().substring(0, joinPoint.getSignature().toShortString().length() - 4));
 
             Object proceed = joinPoint.proceed();
 
-            timeTrace.end(joinPoint.getSignature().toShortString(), status);
+            timeTrace.end(status);
 
             return proceed;
         } catch (Throwable e) {

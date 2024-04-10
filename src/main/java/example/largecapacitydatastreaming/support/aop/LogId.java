@@ -4,12 +4,14 @@ import java.util.*;
 
 public class LogId {
     private final String id;
-    private final Map<String, Long> timeMap = new HashMap<>();
     private int level;
+    private final MaxTimeTrace maxTimeTrace;
+    private long totalDuration;
 
     public LogId() {
         this.id = UUID.randomUUID().toString().substring(0, 8);
         this.level = 0;
+        this.maxTimeTrace = new MaxTimeTrace();
     }
 
     private LogId callExistLogId(int levelControl) {
@@ -30,15 +32,22 @@ public class LogId {
         return level;
     }
 
-    public Map<String, Long> getTimeMap() {
-        return timeMap;
+    public MaxTimeTrace getMaxTime() {
+        return maxTimeTrace;
     }
 
-    public void addSpendTimes(String message, Long time) {
-        timeMap.put(message, time);
+    public void updateMaxTime(long time, String message) {
+        if (maxTimeTrace.getMaxTime() < time) {
+            maxTimeTrace.setMaxTime(time);
+            maxTimeTrace.setMessage(message);
+        }
     }
 
-    public void updateSpendTimes(String message, Long time) {
-        timeMap.put(message, time - timeMap.get(message));
+    public void updateTotalDuration(long time) {
+        totalDuration += time;
+    }
+
+    public long getTotalDuration() {
+        return totalDuration;
     }
 }
