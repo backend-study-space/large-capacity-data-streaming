@@ -30,7 +30,7 @@ public class EmployeeRepositoryV4 {
 
     public <T> Stream<T> resultSetStream(int bulkPoint,
                                          RowMapper<T> rowMapper,
-                                         Runnable listener) {
+                                         Consumer<Integer> listener) {
         String sql = "SELECT * FROM employee";
 
         try {
@@ -41,7 +41,7 @@ public class EmployeeRepositoryV4 {
     }
 
     public <T> Stream<T> resultSetStream(RowMapper<T> rowMapper,
-                                         Runnable listener) {
+                                         Consumer<Integer> listener) {
         String sql = "SELECT * FROM employee";
 
         try {
@@ -59,7 +59,7 @@ public class EmployeeRepositoryV4 {
 
         private int rowNum = 0;
 
-        private Runnable listener;
+        private Consumer<Integer> listener;
 
         private final ResultSet rs;
 
@@ -77,7 +77,7 @@ public class EmployeeRepositoryV4 {
             this.rowMapper = rowMapper;
         }
 
-        public EmployeeRepositoryV4.CustomSpliterator<T> pinned(Runnable listener) {
+        public EmployeeRepositoryV4.CustomSpliterator<T> pinned(Consumer<Integer> listener) {
             this.listener = listener;
 
             return this;
@@ -86,7 +86,7 @@ public class EmployeeRepositoryV4 {
         public static <T> Stream<T> queryForStream(DataSource dataSource,
                                                    String sql,
                                                    RowMapper<T> rowMapper,
-                                                   Runnable listener) throws SQLException {
+                                                   Consumer<Integer> listener) throws SQLException {
             ComfortableConnection connection = new ComfortableConnection(dataSource, sql);
 
             return StreamSupport.stream(new CustomSpliterator<>(connection.resultSet, rowMapper)
@@ -98,7 +98,7 @@ public class EmployeeRepositoryV4 {
                                                    String sql,
                                                    RowMapper<T> rowMapper,
                                                    int pinPoint,
-                                                   Runnable listener) throws SQLException {
+                                                   Consumer<Integer> listener) throws SQLException {
             ComfortableConnection connection = ComfortableConnection.open(dataSource, sql);
 
             return StreamSupport.stream(new CustomSpliterator<>(connection.resultSet, rowMapper, pinPoint)
@@ -144,12 +144,12 @@ public class EmployeeRepositoryV4 {
                     consumer.accept(t);
 
                     if (rowNum > 0 && rowNum % bulkPoint == 0) {
-                        listener.run();
+                        listener.accept(rowNum);
                     }
 
                     return true;
                 } else {
-                    listener.run();
+                    listener.accept(rowNum);
                     return false;
                 }
             } catch (SQLException e) {

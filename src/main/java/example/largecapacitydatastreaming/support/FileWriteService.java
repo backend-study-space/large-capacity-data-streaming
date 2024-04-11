@@ -2,6 +2,7 @@ package example.largecapacitydatastreaming.support;
 
 import org.springframework.stereotype.Component;
 
+import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -36,6 +37,17 @@ public class FileWriteService<T> {
         }
     }
 
+    public void writeBody(SerializableCustom data, String filePath) {
+        try (
+                FileWriter fileWriter = new FileWriter(filePath, true);
+                BufferedWriter bufferedWriter = new BufferedWriter(fileWriter, 65536)
+        ) {
+            createBody(data, bufferedWriter);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private void createHeader(Class<T> type, FileWriter writer) throws IOException {
         boolean isFirstField = true;
 
@@ -50,6 +62,10 @@ public class FileWriteService<T> {
             }
         }
         writer.append("\n");
+    }
+
+    private void createBody(SerializableCustom t, BufferedWriter writer) throws IOException {
+        writer.append(t.serialize()).append(System.lineSeparator());
     }
 
     private void createBody(T t, Class<T> type, FileWriter writer) throws IOException {

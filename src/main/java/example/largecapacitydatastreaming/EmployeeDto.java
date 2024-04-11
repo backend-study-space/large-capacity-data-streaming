@@ -1,6 +1,7 @@
 package example.largecapacitydatastreaming;
 
 import example.largecapacitydatastreaming.support.Column;
+import example.largecapacitydatastreaming.support.SerializableCustom;
 
 import java.util.Date;
 
@@ -15,7 +16,7 @@ public record EmployeeDto(
         double salary,
         @Column(Name = "hireDate")
         Date hireDate
-) {
+) implements SerializableCustom {
         public static EmployeeDto create(Employee employee) {
                 return new EmployeeDto(
                         employee.firstName() + " " + employee.lastName(),
@@ -24,5 +25,10 @@ public record EmployeeDto(
                         employee.salary(),
                         employee.hireDate()
                 );
+        }
+
+        @Override
+        public String serialize() {
+                return fullName + "," + email + "," + department + "," + salary + "," + hireDate;
         }
 }

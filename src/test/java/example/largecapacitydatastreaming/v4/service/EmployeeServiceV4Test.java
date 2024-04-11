@@ -13,7 +13,7 @@ class EmployeeServiceV4Test {
 
     @Test
     void fileWriteTest() {
-        employeeServiceV4.findAllEmployees("test4.csv");
+        employeeServiceV4.writeFileByUseReflection("test4.csv");
     }
 
 }
