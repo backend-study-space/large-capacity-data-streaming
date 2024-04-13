@@ -9,9 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Service
 @TimeTracer
 public class EmployeeServiceV4 {
@@ -25,29 +22,6 @@ public class EmployeeServiceV4 {
     public EmployeeServiceV4(EmployeeRepositoryV4 employeeRepositoryV4, FileWriteService<EmployeeDto> fileWriteService) {
         this.employeeRepositoryV4 = employeeRepositoryV4;
         this.fileWriteService = fileWriteService;
-    }
-
-    public void writeFileByUseReflection(String filePath) {
-        fileWriteService.writeHeader(EmployeeDto.class, filePath);
-
-        List<EmployeeDto> list = new ArrayList<>();
-
-        long rowCount = employeeRepositoryV4.resultSetStream(
-                        100000,
-                        (rs, rowNum) -> new Employee(
-                                rs.getString("first_name"),
-                                rs.getString("last_name"),
-                                rs.getString("email"),
-                                rs.getString("department"),
-                                rs.getDouble("salary"),
-                                rs.getDate("hire_date")
-                        ), (rowNum) -> {
-                            fileWriteService.writeBody(EmployeeDto.class, list, filePath);
-                            list.clear();
-                        }
-                )
-                .map(EmployeeDto::create)
-                .peek(list::add).count();
     }
 
     public void writeFileByInterface(String filePath) {

@@ -12,8 +12,7 @@ class EmployeeServiceV4Test {
     private EmployeeServiceV4 employeeServiceV4;
 
     @Test
-    void fileWriteTest() {
-        employeeServiceV4.writeFileByUseReflection("test4.csv");
+    void fileWriteTest2() {
+        employeeServiceV4.writeFileByInterface("test5.csv");
     }
-
 }

@@ -7,6 +7,7 @@ public class LogId {
     private int level;
     private final MaxTimeTrace maxTimeTrace;
     private long totalDuration;
+    private String beforeMessage;
 
     public LogId() {
         this.id = UUID.randomUUID().toString().substring(0, 8);
@@ -47,7 +48,15 @@ public class LogId {
         totalDuration += time;
     }
 
-    public long getTotalDuration() {
-        return totalDuration;
+    public double getTotalDuration() {
+        return totalDuration / 1000.0;
+    }
+
+    public String getBeforeMessage() {
+        return beforeMessage;
+    }
+
+    public void setBeforeMessage(String beforeMessage) {
+        this.beforeMessage = beforeMessage;
     }
 }

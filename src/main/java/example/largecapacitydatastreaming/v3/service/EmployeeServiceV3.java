@@ -35,24 +35,5 @@ public class EmployeeServiceV3 {
                         rs.getDate("hire_date")))
                 .map(EmployeeDto::create)
                 .forEach(employeeDto -> fileWriteService.writeBody(EmployeeDto.class, employeeDto, filePath));
-
-//        List<EmployeeDto> list = new ArrayList<>();
-
-//        long rowCount = employeeRepositoryV3.resultSetStream(
-//                        100000,
-//                        (rs, rowNum) -> new Employee(
-//                                rs.getString("first_name"),
-//                                rs.getString("last_name"),
-//                                rs.getString("email"),
-//                                rs.getString("department"),
-//                                rs.getDouble("salary"),
-//                                rs.getDate("hire_date")
-//                        ), () -> {
-//                            fileWriteService.writeBody(EmployeeDto.class, list, filePath);
-//                            list.clear();
-//                        }
-//                )
-//                .map(EmployeeDto::create)
-//                .peek(list::add).count();
     }
 }

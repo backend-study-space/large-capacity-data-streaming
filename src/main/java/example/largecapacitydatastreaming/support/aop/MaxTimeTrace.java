@@ -14,8 +14,8 @@ public class MaxTimeTrace {
         this.message = message;
     }
 
-    public long getMaxTime() {
-        return maxTime;
+    public double getMaxTime() {
+        return maxTime / 1000.0;
     }
 
     public void setMaxTime(long maxTime) {

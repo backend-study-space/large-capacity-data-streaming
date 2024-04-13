@@ -11,6 +11,8 @@ import java.util.List;
 @Component
 public class FileWriteService<T> {
 
+    private final ThreadLocal<BufferedWriter> fileWriter = new ThreadLocal<>();
+
     public void writeHeader(Class<T> type, String filePath) {
         try (FileWriter writer = new FileWriter(filePath)) {
             createHeader(type, writer);
@@ -38,11 +40,15 @@ public class FileWriteService<T> {
     }
 
     public void writeBody(SerializableCustom data, String filePath) {
-        try (
-                FileWriter fileWriter = new FileWriter(filePath, true);
-                BufferedWriter bufferedWriter = new BufferedWriter(fileWriter, 65536)
-        ) {
-            createBody(data, bufferedWriter);
+        BufferedWriter writer = fileWriter.get();
+
+        try {
+            if (writer == null) {
+                writer = new BufferedWriter(new FileWriter(filePath), 65536);
+                fileWriter.set(writer);
+            }
+
+            createBody(data, writer);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

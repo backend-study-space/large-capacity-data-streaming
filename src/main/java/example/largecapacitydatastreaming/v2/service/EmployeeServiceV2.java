@@ -26,7 +26,7 @@ public class EmployeeServiceV2 {
     public void findAllEmployees(String filePath) {
         fileWriteService.writeHeader(EmployeeDto.class, filePath);
 
-        int pageSize = 10000;
+        int pageSize = 100000;
         int totalRecords = 1_000_000;
 
         for (int start = 0; start < totalRecords; start += pageSize) {
