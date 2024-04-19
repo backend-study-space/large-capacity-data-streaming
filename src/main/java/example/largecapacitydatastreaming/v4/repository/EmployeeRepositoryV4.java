@@ -149,7 +149,9 @@ public class EmployeeRepositoryV4 {
 
                     return true;
                 } else {
-                    listener.accept(rowNum);
+                    if (rowNum > 0 && rowNum % bulkPoint != 0) {
+                        listener.accept(rowNum);
+                    }
                     return false;
                 }
             } catch (SQLException e) {

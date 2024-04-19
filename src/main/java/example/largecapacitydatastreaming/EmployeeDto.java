@@ -8,6 +8,8 @@ import java.util.Date;
 public record EmployeeDto(
         @Column(Name = "fullName")
         String fullName,
+        @Column(Name = "autoCompleteName")
+        String autoCompleteName,
         @Column(Name = "email")
         String email,
         @Column(Name = "department")
@@ -18,8 +20,10 @@ public record EmployeeDto(
         Date hireDate
 ) implements SerializableCustom {
         public static EmployeeDto create(Employee employee) {
+                String str = employee.firstName() + " " + employee.lastName();
                 return new EmployeeDto(
-                        employee.firstName() + " " + employee.lastName(),
+                        str,
+                        analysisName(str),
                         employee.email(),
                         employee.department(),
                         employee.salary(),
@@ -29,6 +33,18 @@ public record EmployeeDto(
 
         @Override
         public String serialize() {
-                return fullName + "," + email + "," + department + "," + salary + "," + hireDate;
+                return fullName + "," + autoCompleteName + "," + email + "," + department + "," + salary + "," + hireDate;
+        }
+
+        private static String analysisName(String fullName) {
+                StringBuilder str = new StringBuilder();
+                StringBuilder temp = new StringBuilder();
+
+                for (char c : fullName.toCharArray()) {
+                        temp.append(c);
+                        str.append(temp).append(" ");
+                }
+
+                return str.toString();
         }
 }

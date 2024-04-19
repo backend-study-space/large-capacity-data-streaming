@@ -6,12 +6,17 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.nio.Buffer;
+import java.util.Collection;
 import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Component
 public class FileWriteService<T> {
 
-    private final ThreadLocal<BufferedWriter> fileWriter = new ThreadLocal<>();
+    Lock lock = new ReentrantLock();
 
     public void writeHeader(Class<T> type, String filePath) {
         try (FileWriter writer = new FileWriter(filePath)) {
@@ -22,9 +27,9 @@ public class FileWriteService<T> {
     }
 
     public void writeBody(Class<T> type, List<T> data, String filePath) {
-        try (FileWriter writer = new FileWriter(filePath, true)) {
+        try (FileWriter writer = new FileWriter(filePath, true); BufferedWriter bufferedWriter = new BufferedWriter(writer)) {
             for (T t : data) {
-                createBody(t, type, writer);
+                createBody(t, type, bufferedWriter);
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -32,25 +37,33 @@ public class FileWriteService<T> {
     }
 
     public void writeBody(Class<T> type, T data, String filePath) {
-        try (FileWriter writer = new FileWriter(filePath, true)) {
-            createBody(data, type, writer);
+        try (FileWriter writer = new FileWriter(filePath, true); BufferedWriter bufferedWriter = new BufferedWriter(writer)) {
+            createBody(data, type, bufferedWriter);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public void writeBody(SerializableCustom data, String filePath) {
-        BufferedWriter writer = fileWriter.get();
-
-        try {
-            if (writer == null) {
-                writer = new BufferedWriter(new FileWriter(filePath), 65536);
-                fileWriter.set(writer);
+    public void writeBody(T data, BufferedWriter writer) {
+        if (data instanceof SerializableCustom) {
+            try {
+                createBody((SerializableCustom) data, writer);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
+        }
+    }
 
-            createBody(data, writer);
+    public void writeBody(Queue<T> data, BufferedWriter bufferedWriter) {
+        try {
+            lock.lock();
+            while (!data.isEmpty()) {
+                createBody((SerializableCustom) data.poll(), bufferedWriter);
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -71,10 +84,11 @@ public class FileWriteService<T> {
     }
 
     private void createBody(SerializableCustom t, BufferedWriter writer) throws IOException {
-        writer.append(t.serialize()).append(System.lineSeparator());
+        if (t != null)
+            writer.append(t.serialize()).append(System.lineSeparator());
     }
 
-    private void createBody(T t, Class<T> type, FileWriter writer) throws IOException {
+    private void createBody(T t, Class<T> type, BufferedWriter writer) throws IOException {
         boolean isFirstField = true;
 
         for (Field declaredField : type.getDeclaredFields()) {
