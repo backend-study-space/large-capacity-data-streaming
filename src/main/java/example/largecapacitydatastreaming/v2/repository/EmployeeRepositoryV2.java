@@ -23,6 +23,25 @@ public class EmployeeRepositoryV2 {
         this.dataSource = dataSource;
     }
 
+    public int getCount() {
+        String sql = "SELECT COUNT(*) FROM employee";
+        int count = 0;
+        try (Connection connection = DataSourceUtils.getConnection(dataSource);
+             PreparedStatement pStmt = connection.prepareStatement(sql);
+        ) {
+            try (ResultSet rs = pStmt.executeQuery()) {
+
+                if (rs.next()) {
+                    count = rs.getInt(1);
+                }
+
+                return count;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public <T> List<T> findAll(RowMapper<T> rowMapper, int start, int end) {
         int rowNum = 0;
         String sql = "SELECT * FROM employee LIMIT ?, ?";

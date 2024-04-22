@@ -21,6 +21,7 @@ public record EmployeeDto(
 ) implements SerializableCustom {
         public static EmployeeDto create(Employee employee) {
                 String str = employee.firstName() + " " + employee.lastName();
+
                 return new EmployeeDto(
                         str,
                         analysisName(str),

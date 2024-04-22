@@ -18,6 +18,14 @@ public class FileWriteService<T> {
 
     Lock lock = new ReentrantLock();
 
+    public BufferedWriter getBufferedWriter(String filePath) {
+        try {
+            return new BufferedWriter(new FileWriter(filePath), 65536);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public void writeHeader(Class<T> type, String filePath) {
         try (FileWriter writer = new FileWriter(filePath)) {
             createHeader(type, writer);

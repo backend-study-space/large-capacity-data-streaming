@@ -13,11 +13,6 @@ class EmployeeServiceV4Test {
 
     @Test
     void fileWriteTest2() {
-        employeeServiceV4.writeFileByInterface("test5.csv");
-    }
-
-    @Test
-    void fileWriteTestByMultiThreads() {
-        employeeServiceV4.writeFileByMultiVirtualThreads("test6.csv");
+        employeeServiceV4.writeFileByPinPoint("test5.csv");
     }
 }
