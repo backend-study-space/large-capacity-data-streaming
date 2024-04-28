@@ -68,7 +68,7 @@ public void writeFile(String filePath) {
 
 ## 문제점
 
-[테스트 이미지1]
+![img.png](img.png)
 
 OOM 에러가 발생했는데, 왜 이런 문제가 발생하는걸까요?
 
@@ -78,12 +78,11 @@ OOM 에러가 발생했는데, 왜 이런 문제가 발생하는걸까요?
 
 ## 해결
 
-[Configuration 수정 이미지]
-[테스트 이미지2]
+![img_1.png](img_1.png)
 
 이걸로 과연 문제는 해결됐습니다.
 
-하지만 DB의 데이터가 계속해서 늘어난다고 가정했을 때, 바람직한 해결방법일까요? 
+**하지만 DB의 데이터가 계속해서 늘어난다고 가정했을 때, 단편적인 스케일업 방식으로 해결한 게 좋은 방식인지는 장담할 수 없습니다.** 
 
 ## v2
 
@@ -175,9 +174,11 @@ public void findAllEmployees(String filePath) {
 
 따라서, 데이터 소스에서 커넥션을 가져와 DB 서버와 통신하는 과정을 페이지 크기만큼 반복해야 합니다.
 
-이는 DB 서버에 상대적으로 더 큰 부하를 주는 것으로, 이전 방식에 비해 효율성이 떨어질 수 있습니다.
+이는 DB 커넥션 점유시간이 늘어나고, DB 서버에 상대적으로 더 큰 부하를 줄 수 있습니다.
 
-[수행시간 이미지]
+뿐만 아니라 잦은 데이터베이스 I/O로 인해, 효율성 또한 떨어집니다.
+
+![img_2.png](img_2.png)
 
 ## v3
 
@@ -282,6 +283,12 @@ ResultSet에서 다음 요소가 존재할 경우에 RowMapper를 반환하도�
 
 테스트 결과를 확인해보면 다음과 같습니다.
 
+![img_3.png](img_3.png)
+
+이전 방식에 비해 커넥션 점유시간이 짧아졌고, 전체적인 처리 효율성이 높아졌습니다.
+
+이는 BufferedWriter의 특성과도 관련이 있는데, 버퍼에 작업내용을 모아서 한번에 flush 해줌으로써 forEach문으로 fileWrite 로직을 사용해도 I/O 작업이 많이 발생하지 않습니다.
+
 ## 고려할 점
 사실 queryForStream 메서드의 경우, JdbcTemplate에서 똑같은 기능을 지원해주는 메서드가 있습니다. 하지만 커스텀하게 구현했을 경우 개발자가 추가적으로 필요한 기능을 넣어줄 수 있습니다.
 
@@ -380,7 +387,7 @@ public void writeFileByPinPoint(String filePath) {
 
 <b>이러한 커스텀 구현을 통해, 표준 기능을 넘어서는 유연성과 확장성을 얻을 수 있습니다.</b>
 
-[테스트 이미지]
+![img_4.png](img_4.png)
 
 ## 고려할 점
 싱글 쓰레드 기반 어플리케이션의 I/O 작업에는 필시 blocking이 발생하기 마련입니다.
@@ -392,62 +399,44 @@ V5에서는 I/O 작업 수행 시 멀티 쓰레드를 활용해서 성능을 개
 
 ** <b>예제를 간소화하기 위해 쓰레드의 생성과 실행을 분리하지 않았으며, 생명 주기는 고려하지 않았습니다.</b>
 
-V5에서는 자바의 기존 쓰레드 모델과, 버츄얼 쓰레드 모델의 차이를 통한 성능차이를 확인해보도록 하겠습니다.
+V5에서는 버츄얼 쓰레드 모델을 사용해 성능차이를 확인해보도록 하겠습니다.
 
-먼저, 일반 쓰레드 모델을 사용한 비동기 작업입니다.
+V5에서는 서비스 로직에서 사용되는 FileWriteService의 writeBody 메서드에 파라미터가 하나 추가되었습니다.
 
 ```java
-public void writeFileByNonVirtualThreads(String filePath) {
-    fileWriteService.writeHeader(EmployeeDto.class, filePath);
-    Queue<EmployeeDto> queue = new ConcurrentLinkedQueue<>();
+    public void writeBody(Queue<T> data, BufferedWriter bufferedWriter, Consumer<BufferedWriter> listener) {
+    try {
+        while (!data.isEmpty()) {
+            createBody((SerializableCustom) data.poll(), bufferedWriter);
+        }
 
-    BufferedWriter bufferedWriter = fileWriteService.getBufferedWriter(filePath);
-
-    employeeRepositoryV4.resultSetStream(1000, (rs, rowNum) -> new Employee(
-                    rs.getString("first_name"),
-                    rs.getString("last_name"),
-                    rs.getString("email"),
-                    rs.getString("department"),
-                    rs.getDouble("salary"),
-                    rs.getDate("hire_date")
-            ), rowNum -> {
-                new Thread(() -> {
-                    fileWriteService.writeBody(queue, bufferedWriter);
-                    log.info("현재 {}개 처리되었습니다.", rowNum);
-                }).start();
-            })
-            .map(EmployeeDto::create)
-            .forEach(queue::add);
+        listener.accept(bufferedWriter);
+    } catch (IOException e) {
+        throw new RuntimeException(e);
+    }
 }
 ```
 
-두 번째로, 버츄얼 쓰레드를 사용한 비동기 작업입니다.
+listener로 사용되는 메서드는 다음과 같이 BufferedWriter에서 flush가 일어나 IO작업을 수행할 때 새로운 버츄얼 쓰레드로 스위칭해 대기시간이 최대한 발생하지 않게 구현했습니다.
 
 ```java
-public void writeFileByVirtualThreads(String filePath) {
-    fileWriteService.writeHeader(EmployeeDto.class, filePath);
-    Queue<EmployeeDto> queue = new ConcurrentLinkedQueue<>();
-
-    BufferedWriter bufferedWriter = fileWriteService.getBufferedWriter(filePath);
-
-    employeeRepositoryV4.resultSetStream(1000, (rs, rowNum) -> new Employee(
-                    rs.getString("first_name"),
-                    rs.getString("last_name"),
-                    rs.getString("email"),
-                    rs.getString("department"),
-                    rs.getDouble("salary"),
-                    rs.getDate("hire_date")
-            ), rowNum -> {
-                Thread.ofVirtual().start(() -> {
-                    fileWriteService.writeBody(queue, bufferedWriter);
-                    log.info("현재 {}개 처리되었습니다.", rowNum);
-                });
-            })
-            .map(EmployeeDto::create)
-            .forEach(queue::add);
+public static Consumer<BufferedWriter> writeByThreads() {
+    return writer -> Thread.ofVirtual().start(() -> {
+        try {
+            writer.flush();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    });
 }
 ```
 
-[실행결과 이미지]
+![img_5.png](img_5.png)
+
+데이터의 용량이 크지 않고 flush의 시점이 while문 내에서 발생할 수도 있기 때문에 크게 차이가나진 않습니다.
+
+다만, 데이터가 커질수록, I/O작업이 많아질수록 효율성은 높아질 것으로 예상됩니다.
 
 ## 결론
+
+V1 ~ V5까지의 과정을 통해 함수형 인터페이스, 스트림, 람다 등을 활용한 성능 개선 과정을 기록해봤습니다.

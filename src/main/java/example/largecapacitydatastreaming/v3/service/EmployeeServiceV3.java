@@ -7,6 +7,7 @@ import example.largecapacitydatastreaming.support.aop.pointcut.TimeTracer;
 import example.largecapacitydatastreaming.v3.repository.EmployeeRepositoryV3;
 import org.springframework.stereotype.Service;
 
+import java.io.BufferedWriter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,6 +27,8 @@ public class EmployeeServiceV3 {
     public void findAllEmployees(String filePath) {
         fileWriteService.writeHeader(EmployeeDto.class, filePath);
 
+        BufferedWriter bufferedWriter = FileWriteService.createWriter(filePath);
+
         employeeRepositoryV3.resultSetStream((rs, rowNum) -> new Employee(
                         rs.getString("first_name"),
                         rs.getString("last_name"),
@@ -34,6 +37,6 @@ public class EmployeeServiceV3 {
                         rs.getDouble("salary"),
                         rs.getDate("hire_date")))
                 .map(EmployeeDto::create)
-                .forEach(employeeDto -> fileWriteService.writeBody(EmployeeDto.class, employeeDto, filePath));
+                .forEach(employeeDto -> fileWriteService.writeBody(employeeDto, bufferedWriter));
     }
 }

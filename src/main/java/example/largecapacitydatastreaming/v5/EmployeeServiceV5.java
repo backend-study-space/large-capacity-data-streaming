@@ -11,8 +11,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedWriter;
+import java.io.IOException;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Consumer;
+
+import static example.largecapacitydatastreaming.support.FileWriteService.*;
+import static example.largecapacitydatastreaming.support.FileWriteService.writeByThreads;
 
 @Service
 @TimeTracer
@@ -29,36 +34,13 @@ public class EmployeeServiceV5 {
         this.fileWriteService = fileWriteService;
     }
 
-    public void writeFileByNonVirtualThreads(String filePath) {
-        fileWriteService.writeHeader(EmployeeDto.class, filePath);
-        Queue<EmployeeDto> queue = new ConcurrentLinkedQueue<>();
-
-        BufferedWriter bufferedWriter = fileWriteService.getBufferedWriter(filePath);
-
-        employeeRepositoryV4.resultSetStream(1000, (rs, rowNum) -> new Employee(
-                        rs.getString("first_name"),
-                        rs.getString("last_name"),
-                        rs.getString("email"),
-                        rs.getString("department"),
-                        rs.getDouble("salary"),
-                        rs.getDate("hire_date")
-                ), rowNum -> {
-                    new Thread(() -> {
-                        fileWriteService.writeBody(queue, bufferedWriter);
-                        log.info("현재 {}개 처리되었습니다.", rowNum);
-                    }).start();
-                })
-                .map(EmployeeDto::create)
-                .forEach(queue::add);
-    }
-
     public void writeFileByVirtualThreads(String filePath) {
         fileWriteService.writeHeader(EmployeeDto.class, filePath);
         Queue<EmployeeDto> queue = new ConcurrentLinkedQueue<>();
 
-        BufferedWriter bufferedWriter = fileWriteService.getBufferedWriter(filePath);
+        BufferedWriter bufferedWriter = createWriter(filePath);
 
-        employeeRepositoryV4.resultSetStream(1000, (rs, rowNum) -> new Employee(
+        employeeRepositoryV4.resultSetStream(10000, (rs, rowNum) -> new Employee(
                         rs.getString("first_name"),
                         rs.getString("last_name"),
                         rs.getString("email"),
@@ -66,12 +48,12 @@ public class EmployeeServiceV5 {
                         rs.getDouble("salary"),
                         rs.getDate("hire_date")
                 ), rowNum -> {
-                    Thread.ofVirtual().start(() -> {
-                        fileWriteService.writeBody(queue, bufferedWriter);
-                        log.info("현재 {}개 처리되었습니다.", rowNum);
-                    });
+                    fileWriteService.writeBody(queue, bufferedWriter, writeByThreads());
+//                    log.info("현재 {}개 처리되었습니다.", rowNum);
                 })
                 .map(EmployeeDto::create)
                 .forEach(queue::add);
     }
+
+
 }

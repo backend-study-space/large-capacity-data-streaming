@@ -6,24 +6,29 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.nio.Buffer;
-import java.util.Collection;
 import java.util.List;
 import java.util.Queue;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 
 @Component
 public class FileWriteService<T> {
 
-    Lock lock = new ReentrantLock();
-
-    public BufferedWriter getBufferedWriter(String filePath) {
+    public static BufferedWriter createWriter(String filePath) {
         try {
-            return new BufferedWriter(new FileWriter(filePath), 65536);
+            return new BufferedWriter(new FileWriter(filePath));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static Consumer<BufferedWriter> writeByThreads() {
+        return writer -> Thread.ofVirtual().start(() -> {
+            try {
+                writer.flush();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     public void writeHeader(Class<T> type, String filePath) {
@@ -62,16 +67,15 @@ public class FileWriteService<T> {
         }
     }
 
-    public void writeBody(Queue<T> data, BufferedWriter bufferedWriter) {
+    public void writeBody(Queue<T> data, BufferedWriter bufferedWriter, Consumer<BufferedWriter> listener) {
         try {
-            lock.lock();
             while (!data.isEmpty()) {
                 createBody((SerializableCustom) data.poll(), bufferedWriter);
             }
+
+            listener.accept(bufferedWriter);
         } catch (IOException e) {
             throw new RuntimeException(e);
-        } finally {
-            lock.unlock();
         }
     }
 

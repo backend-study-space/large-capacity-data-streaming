@@ -29,7 +29,7 @@ public class EmployeeServiceV4 {
     public void writeFileByPinPoint(String filePath) {
         fileWriteService.writeHeader(EmployeeDto.class, filePath);
 
-        BufferedWriter bufferedWriter = fileWriteService.getBufferedWriter(filePath);
+        BufferedWriter bufferedWriter = FileWriteService.createWriter(filePath);
 
         employeeRepositoryV4.resultSetStream((rs, rowNum) -> new Employee(
                         rs.getString("first_name"),
